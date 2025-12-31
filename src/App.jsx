@@ -1,60 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase'; 
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+// Aapke Components aur Pages
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
-import Login from './pages/login';
-import Signup from './pages/Signup';
-
-// === YAHAN CHANGES KIYE HAIN (Real imports lagaye hain) ===
-import SeedAnalyzer from './pages/SeedAnalysis';
-import YieldPrediction from './pages/YieldPrediction';
+import SeedAnalysis from './pages/SeedAnalysis';
 import DiseaseScanner from './pages/DiseaseScanner';
+import YieldPrediction from './pages/YieldPrediction';
+import Login from './pages/login';   // Agar aapke paas Login page hai
+import Signup from './pages/Signup'; // Agar aapke paas Signup page hai
+
+// Layout Component: Ye Sidebar aur Page ko sahi tarah manage karega
+const Layout = ({ children }) => {
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#f8fcf8]">
+      {/* Sidebar Left Side (Fixed) */}
+      <Sidebar />
+
+      {/* Main Content Right Side (Scrollable) */}
+      <div className="flex-1 h-full overflow-y-auto p-4">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-green-600" size={48} />
-      </div>
-    );
-  }
-
   return (
     <Router>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <Routes>
+        {/* === PUBLIC ROUTES (Bina Sidebar ke) === */}
+        {/* Login/Signup par Sidebar nahi dikhana chahiye */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* === PROTECTED ROUTES (Sidebar ke saath) === */}
+        {/* Jo pages Sidebar ke sath dikhane hain, unhein Layout mein wrap karein */}
         
-        {user && <Sidebar />}
+        <Route path="/" element={
+          <Layout>
+            <Dashboard />
+          </Layout>
+        } />
 
-        <div className="flex-1 overflow-y-auto h-full relative">
-          <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
+        <Route path="/seed-analyzer" element={
+          <Layout>
+            <SeedAnalysis />
+          </Layout>
+        } />
 
-            <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-            
-            {/* Ab ye routes Asli Pages kholenge */}
-            <Route path="/seed-analyzer" element={user ? <SeedAnalyzer /> : <Navigate to="/login" />} />
-            <Route path="/yield-prediction" element={user ? <YieldPrediction /> : <Navigate to="/login" />} />
-            <Route path="/disease-scanner" element={user ? <DiseaseScanner /> : <Navigate to="/login" />} />
+        <Route path="/disease-scanner" element={
+          <Layout>
+            <DiseaseScanner />
+          </Layout>
+        } />
 
-          </Routes>
-        </div>
-      </div>
+        <Route path="/yield-prediction" element={
+          <Layout>
+            <YieldPrediction />
+          </Layout>
+        } />
+
+      </Routes>
     </Router>
   );
 };

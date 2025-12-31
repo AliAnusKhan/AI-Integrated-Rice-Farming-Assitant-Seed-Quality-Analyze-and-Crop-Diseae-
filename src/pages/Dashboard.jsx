@@ -1,108 +1,143 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-// Maine yahan 'ScanLine' add kar diya hai
-import { CloudSun, Droplets, Sprout, AlertTriangle, ArrowRight, Microscope, ScanLine } from 'lucide-react';
+import { Sprout, ScanLine, TrendingUp, ArrowRight, Award, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 const Dashboard = () => {
-  const [lang, setLang] = useState('English');
+  const [stats, setStats] = useState({ seedCount: 0, diseaseCount: 0, yieldCount: 0 });
+  const [activities, setActivities] = useState([]);
+
+  // Load Data on Startup
+  useEffect(() => {
+    // 1. Load Counts
+    const seed = parseInt(localStorage.getItem('seedCount') || '0');
+    const disease = parseInt(localStorage.getItem('diseaseCount') || '0');
+    const yieldC = parseInt(localStorage.getItem('yieldCount') || '0');
+    setStats({ seedCount: seed, diseaseCount: disease, yieldCount: yieldC });
+
+    // 2. Load Recent Activity History
+    const history = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+    setActivities(history);
+  }, []);
 
   return (
-    <div className="p-6 min-h-screen">
+    <div className="p-8 min-h-screen bg-[#f8fcf8]">
       
-      {/* 1. Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Rice Farm Dashboard</h1>
-          <p className="text-slate-500">Welcome back! Check your farm status.</p>
+            <h1 className="text-3xl font-bold text-slate-800">Welcome back</h1>
+            <p className="text-green-600 font-medium mt-1">Your intelligent farming companion</p>
         </div>
-        
-        <div className="flex items-center gap-4">
-            {/* Language Switcher */}
-            <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center shadow-sm">
-                <button 
-                    onClick={() => setLang('English')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-bold transition-all ${lang === 'English' ? 'bg-green-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                    English
-                </button>
-                <button 
-                    onClick={() => setLang('Urdu')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-bold transition-all ${lang === 'Urdu' ? 'bg-green-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                    اردو
-                </button>
-            </div>
-
-            {/* Weather Widget */}
-            <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
-                <CloudSun className="text-yellow-500" />
-                <div>
-                    <p className="text-xs text-slate-400 font-bold">WEATHER</p>
-                    <p className="font-bold text-slate-700">32°C, Sunny</p>
-                </div>
-            </div>
-        </div>
+        <Award className="text-yellow-400" size={32} />
       </div>
 
-      {/* 2. Stats Cards */}
+      {/* Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className="p-3 bg-blue-50 rounded-xl"><Droplets className="text-blue-500" /></div>
-            <div><p className="text-slate-500 text-sm">Soil Moisture</p><h3 className="text-2xl font-bold">High (65%)</h3></div>
+        <ActionCard title="Analyze Seed Quality" icon={<Sprout size={24}/>} color="green" link="/seed-analyzer" desc="Check seed purity" />
+        <ActionCard title="Detect Disease" icon={<ScanLine size={24}/>} color="red" link="/disease-scanner" desc="Identify crop issues" />
+        <ActionCard title="Predict Yield" icon={<TrendingUp size={24}/>} color="yellow" link="/yield-prediction" desc="Estimate harvest" />
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard title="Seed Analyses" count={stats.seedCount} icon={<Sprout size={40}/>} color="green" />
+        <StatCard title="Disease Detections" count={stats.diseaseCount} icon={<ScanLine size={40}/>} color="red" />
+        <StatCard title="Yield Predictions" count={stats.yieldCount} icon={<TrendingUp size={40}/>} color="orange" />
+      </div>
+
+      {/* === RECENT ACTIVITY SECTION === */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
+            {activities.length > 0 && (
+                <button 
+                  onClick={() => { localStorage.removeItem('recentActivities'); setActivities([]); }}
+                  className="text-sm text-red-500 hover:text-red-700 font-medium"
+                >
+                  Clear History
+                </button>
+            )}
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className="p-3 bg-green-50 rounded-xl"><Sprout className="text-green-500" /></div>
-            <div><p className="text-slate-500 text-sm">Crop Health</p><h3 className="text-2xl font-bold">Good</h3></div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div className="p-3 bg-red-50 rounded-xl"><AlertTriangle className="text-red-500" /></div>
-            <div><p className="text-slate-500 text-sm">Alerts</p><h3 className="text-2xl font-bold">2 Pending</h3></div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {activities.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                    <Clock size={48} className="mb-2 opacity-20" />
+                    <p>No recent activity. Start analyzing to see history here.</p>
+                </div>
+            ) : (
+                <div>
+                    {activities.map((item, index) => (
+                        <div key={index} className={`p-4 border-b border-slate-100 last:border-0 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                            item.type === 'Disease Detection' ? 'bg-red-50/30' : 'bg-white'
+                        }`}>
+                           <div className="flex items-center gap-4">
+                                {/* Icon based on Type */}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                    item.type === 'Seed Analysis' ? 'bg-green-100 text-green-600' :
+                                    item.type === 'Disease Detection' ? 'bg-red-100 text-red-600' :
+                                    'bg-orange-100 text-orange-600'
+                                }`}>
+                                    {item.type === 'Seed Analysis' && <Sprout size={20} />}
+                                    {item.type === 'Disease Detection' && <ScanLine size={20} />}
+                                    {item.type === 'Yield Prediction' && <TrendingUp size={20} />}
+                                </div>
+                                
+                                {/* Text Info */}
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-sm">{item.type}</h4>
+                                    <p className={`text-xs font-medium ${
+                                        item.type === 'Disease Detection' ? 'text-red-500' : 'text-slate-500'
+                                    }`}>
+                                        {item.result}
+                                    </p>
+                                </div>
+                           </div>
+
+                           {/* Status Icon/Time */}
+                           <div className="flex flex-col items-end">
+                                {item.type === 'Disease Detection' ? (
+                                    <AlertCircle size={18} className="text-red-500 mb-1" />
+                                ) : (
+                                    <CheckCircle size={18} className="text-green-500 mb-1" />
+                                )}
+                                <span className="text-[10px] text-slate-400">{item.time}</span>
+                           </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       </div>
 
-      {/* 3. Quick Actions */}
-      <h2 className="text-xl font-bold text-slate-800 mb-4">Tools & Features</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Seed Quality Analyzer */}
-        <Link to="/seed-analyzer" className="group bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:border-blue-500 hover:shadow-md transition-all">
-             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600 group-hover:scale-110 transition-transform">
-                <Microscope size={24} />
-             </div>
-             <h3 className="text-xl font-bold text-slate-800 mb-2">Seed Quality Analyzer</h3>
-             <p className="text-slate-500 text-sm mb-4">Check the quality of your rice seeds before planting using AI.</p>
-             <span className="text-blue-600 font-bold text-sm inline-flex items-center gap-1 group-hover:translate-x-2 transition-transform">
-                Analyze Seeds <ArrowRight size={16}/>
-             </span>
-        </Link>
-
-        {/* Disease Scanner */}
-        <Link to="/disease-scanner" className="group bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:border-green-500 hover:shadow-md transition-all">
-             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600 group-hover:scale-110 transition-transform">
-                <ScanLine size={24} />
-             </div>
-             <h3 className="text-xl font-bold text-slate-800 mb-2">Disease Scanner</h3>
-             <p className="text-slate-500 text-sm mb-4">Detect diseases in your crops by uploading leaf images.</p>
-             <span className="text-green-600 font-bold text-sm inline-flex items-center gap-1 group-hover:translate-x-2 transition-transform">
-                Scan Now <ArrowRight size={16}/>
-             </span>
-        </Link>
-
-        {/* Yield Predictor */}
-        <Link to="/yield-prediction" className="group bg-white border border-slate-200 p-6 rounded-3xl shadow-sm hover:border-purple-500 hover:shadow-md transition-all">
-             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4 text-purple-600 group-hover:scale-110 transition-transform">
-                <Sprout size={24} />
-             </div>
-             <h3 className="text-xl font-bold text-slate-800 mb-2">Yield Prediction</h3>
-             <p className="text-slate-500 text-sm mb-4">Estimate your total production and potential profit.</p>
-             <span className="text-purple-600 font-bold text-sm inline-flex items-center gap-1 group-hover:translate-x-2 transition-transform">
-                Calculate <ArrowRight size={16}/>
-             </span>
-        </Link>
-
-      </div>
     </div>
   );
 };
+
+// Helper Components
+const ActionCard = ({ title, icon, color, link, desc }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col justify-between h-48">
+    <div>
+        <div className={`w-12 h-12 bg-${color}-100 rounded-xl flex items-center justify-center text-${color}-600 mb-4`}>
+            {icon}
+        </div>
+        <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        <p className="text-sm text-slate-500">{desc}</p>
+    </div>
+    <Link to={link} className="text-green-600 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
+        Start <ArrowRight size={16} />
+    </Link>
+  </div>
+);
+
+const StatCard = ({ title, count, icon, color }) => (
+  <div className={`bg-${color}-50 border border-${color}-100 p-6 rounded-2xl flex items-center justify-between`}>
+    <div>
+        <p className={`text-${color}-700 font-bold text-sm`}>{title}</p>
+        <h2 className="text-3xl font-bold text-slate-800 mt-1">{count}</h2>
+    </div>
+    <div className={`text-${color}-300`}>{icon}</div>
+  </div>
+);
 
 export default Dashboard;
