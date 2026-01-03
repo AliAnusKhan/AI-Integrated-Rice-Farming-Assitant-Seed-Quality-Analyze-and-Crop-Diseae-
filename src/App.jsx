@@ -1,60 +1,130 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase'; 
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useAuth } from './Context/AuthContext'; // Import useAuth
+import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 
+// Aapke Components aur Pages
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
-import Login from './pages/login';
-import Signup from './pages/Signup';
-
-// === YAHAN CHANGES KIYE HAIN (Real imports lagaye hain) ===
-import SeedAnalyzer from './pages/SeedAnalysis';
-import YieldPrediction from './pages/YieldPrediction';
+import SeedAnalysis from './pages/SeedAnalysis';
 import DiseaseScanner from './pages/DiseaseScanner';
+import YieldPrediction from './pages/YieldPrediction';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import SeedScanner from './pages/SeedScanner';
+import DiseaseDetection from './pages/DiseaseDetection';
+import History from './pages/History';
+import SeedInfo from './pages/SeedInfo';
+import DiseaseInfo from './pages/DiseaseInfo';
+
+// Layout Component: Ye Sidebar aur Page ko sahi tarah manage karega
+const Layout = ({ children }) => {
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#f8fcf8]">
+      {/* Sidebar Left Side (Fixed) */}
+      <Sidebar />
+
+      {/* Main Content Right Side (Scrollable) */}
+      <div className="flex-1 h-full overflow-y-auto p-4">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-green-600" size={48} />
-      </div>
-    );
-  }
-
   return (
     <Router>
-      <div className="flex h-screen bg-slate-50 overflow-hidden">
-        
-        {user && <Sidebar />}
+      <Routes>
+        {/* === PUBLIC ROUTES (Bina Sidebar ke) === */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        {/* Make the main dashboard accessible initially without login */}
+        <Route path="/" element={<Layout><Dashboard /></Layout>} />
 
-        <div className="flex-1 overflow-y-auto h-full relative">
-          <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
-
-            <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-            
-            {/* Ab ye routes Asli Pages kholenge */}
-            <Route path="/seed-analyzer" element={user ? <SeedAnalyzer /> : <Navigate to="/login" />} />
-            <Route path="/yield-prediction" element={user ? <YieldPrediction /> : <Navigate to="/login" />} />
-            <Route path="/disease-scanner" element={user ? <DiseaseScanner /> : <Navigate to="/login" />} />
-
-          </Routes>
-        </div>
-      </div>
+        {/* === PROTECTED ROUTES (Sidebar ke saath) === */}
+        {/* Jo pages Sidebar ke sath dikhane hain, unhein Layout mein wrap karein */}
+        <Route
+          path="/seed-analyzer"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SeedAnalysis />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/disease-scanner"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DiseaseScanner />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/yield-prediction"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <YieldPrediction />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/seed-scan"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SeedScanner />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/disease-detection"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DiseaseDetection />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <History />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/seed-info"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SeedInfo />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/disease-info"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DiseaseInfo />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
 };
