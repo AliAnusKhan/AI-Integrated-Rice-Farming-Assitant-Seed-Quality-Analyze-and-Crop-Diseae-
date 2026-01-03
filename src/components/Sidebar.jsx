@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Sprout, 
@@ -13,42 +13,44 @@ import {
   ChevronRight,
   User
 } from 'lucide-react';
-import { auth } from '../firebase';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { useAuth } from '../Context/AuthContext'; // Import useAuth
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // User Data Store karne ke liye State
-  const [user, setUser] = useState({ name: 'Loading...', email: '...' });
-
-  // === FIREBASE SE DATA UTHANA ===
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        // Agar user ka Display Name set nahi hai to Email ka pehla hissa naam bana lo
-        const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-        setUser({
-          name: displayName,
-          email: currentUser.email
-        });
-      } else {
-        setUser({ name: 'Guest', email: 'No Account' });
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { currentUser, logout } = useAuth(); // Get currentUser and logout from AuthContext
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error("Logout Error:", error);
+      alert("Failed to logout. Please try again.");
     }
   };
+
+  const NavItem = ({ to, icon, label }) => (
+    <NavLink 
+      to={to} 
+      className={({ isActive }) => 
+        `relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+          isActive 
+            ? 'bg-green-50 text-green-700 shadow-sm shadow-green-100' 
+            : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-green-600 rounded-r-full"></div>}
+          <div className={`${isActive ? 'text-green-600' : 'text-slate-400'}`}>{icon}</div>
+          <span>{label}</span>
+          {isActive && <ChevronRight size={16} className="ml-auto opacity-50"/>}
+        </>
+      )}
+    </NavLink>
+  );
 
   return (
     // 'shrink-0' ka matlab: Sidebar kabhi chhota nahi hoga, chahe screen kitni bhi tang ho.
@@ -72,14 +74,11 @@ const Sidebar = () => {
         <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-4">Navigation</p>
             <div className="space-y-1">
-                <NavItem to="/" icon={<LayoutDashboard size={20}/>} label="Dashboard" active={location.pathname === '/'} />
-                <NavItem to="/seed-analyzer" icon={<Sprout size={20}/>} label="Seed Analysis" active={location.pathname === '/seed-analyzer'} />
-                <NavItem to="/disease-scanner" icon={<ScanLine size={20}/>} label="Disease Detection" active={location.pathname === '/disease-scanner'} />
-                <NavItem to="/yield-prediction" icon={<TrendingUp size={20}/>} label="Yield Prediction" active={location.pathname === '/yield-prediction'} />
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-600 cursor-pointer transition-all">
-                    <History size={20} />
-                    <span className="font-medium text-sm">History</span>
-                </div>
+                <NavItem to="/" icon={<LayoutDashboard size={20}/>} label="Dashboard" />
+                <NavItem to="/seed-info" icon={<Sprout size={20}/>} label="Seed Analysis" />
+                <NavItem to="/disease-info" icon={<ScanLine size={20}/>} label="Disease Detection" />
+                <NavItem to="/yield-prediction" icon={<TrendingUp size={20}/>} label="Yield Prediction" />
+                <NavItem to="/history" icon={<History size={20}/>} label="History" />
             </div>
         </div>
 
@@ -103,13 +102,13 @@ const Sidebar = () => {
             <div className="flex items-center gap-3 overflow-hidden">
                 {/* User Avatar - First Letter of Name */}
                 <div className="w-10 h-10 bg-gradient-to-tr from-green-600 to-green-400 rounded-full flex items-center justify-center text-white font-bold shadow-md shadow-green-100 shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
+                    {currentUser && currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'G'}
                 </div>
                 {/* Dynamic User Details */}
                 <div className="overflow-hidden">
-                    <h4 className="text-sm font-bold text-slate-800 truncate capitalize">{user.name}</h4>
-                    <p className="text-[10px] text-slate-500 truncate w-32" title={user.email}>
-                        {user.email}
+                    <h4 className="text-sm font-bold text-slate-800 truncate capitalize">{currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Guest'}</h4>
+                    <p className="text-[10px] text-slate-500 truncate w-32" title={currentUser ? currentUser.email : 'No Account'}>
+                        {currentUser ? currentUser.email : 'No Account'}
                     </p>
                 </div>
             </div>
@@ -127,21 +126,5 @@ const Sidebar = () => {
     </div>
   );
 };
-
-const NavItem = ({ to, icon, label, active }) => (
-  <Link 
-    to={to} 
-    className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-        active 
-        ? 'bg-green-50 text-green-700 shadow-sm shadow-green-100' 
-        : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'
-    }`}
-  >
-    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-green-600 rounded-r-full"></div>}
-    <div className={`${active ? 'text-green-600' : 'text-slate-400'}`}>{icon}</div>
-    <span>{label}</span>
-    {active && <ChevronRight size={16} className="ml-auto opacity-50"/>}
-  </Link>
-);
 
 export default Sidebar;
