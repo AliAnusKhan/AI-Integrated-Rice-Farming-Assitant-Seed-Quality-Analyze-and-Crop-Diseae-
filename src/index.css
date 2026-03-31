@@ -1,0 +1,17 @@
+/* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 👇 Ye Code Add Karein 👇 */
+html, body {
+  overflow-x: hidden; /* Left-Right scroll band */
+  width: 100%;        /* Screen se bahar kuch nahi jayega */
+  position: relative;
+}
+
+#root {
+  width: 100%;
+  overflow-x: hidden;
+}
