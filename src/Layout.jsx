@@ -6,7 +6,7 @@ const Layout = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8fcf8]">
       <Sidebar />
-      <div className="flex-1 h-full overflow-y-auto p-4">
+      <div className="flex-1 h-full overflow-y-auto">
         <InstallPrompt />
         {children}
       </div>
