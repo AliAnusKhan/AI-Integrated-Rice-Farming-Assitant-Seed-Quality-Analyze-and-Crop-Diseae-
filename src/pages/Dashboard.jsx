@@ -34,7 +34,7 @@ const Dashboard = () => {
       {/* Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <ActionCard title="Analyze Seed Quality" icon={<Sprout size={24}/>} color="green" link="/seed-analyzer" desc="Check seed purity" />
-        <ActionCard title="Detect Disease" icon={<ScanLine size={24}/>} color="red" link="/disease-scanner" desc="Identify crop issues" />
+        <ActionCard title="Detect Disease" icon={<ScanLine size={24}/>} color="red" link="/disease-detection" desc="Identify crop issues" />
         <ActionCard title="Predict Yield" icon={<TrendingUp size={24}/>} color="yellow" link="/yield-prediction" desc="Estimate harvest" />
       </div>
 
