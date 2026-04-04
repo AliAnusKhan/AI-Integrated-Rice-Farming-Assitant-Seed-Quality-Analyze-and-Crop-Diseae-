@@ -110,7 +110,7 @@ const Sidebar = () => {
             <div className="space-y-1">
               <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" />
               <NavItem to="/seed-info" icon={<Sprout size={20} />} label="Seed Analysis" />
-              <NavItem to="/disease-info" icon={<ScanLine size={20} />} label="Disease Detection" />
+              <NavItem to="/disease-detection" icon={<ScanLine size={20} />} label="Disease Detection" />
               <NavItem to="/yield-prediction" icon={<TrendingUp size={20} />} label="Yield Prediction" />
               <NavItem to="/history" icon={<History size={20} />} label="History" />
             </div>
