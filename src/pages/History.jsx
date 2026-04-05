@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 const History = () => {
   // Sample Data (You can replace this with real API data later)
   const historyData = [
-    { id: 1, type: 'Disease', name: 'Tomato Blight', date: 'Dec 19, 2024', status: 'Detected', color: 'red' },
+    { id: 1, type: 'Disease', name: '   ', date: 'Dec 19, 2024', status: 'Detected', color: 'red' },
     { id: 2, type: 'Yield', name: 'Wheat Field A', date: 'Dec 18, 2024', status: 'Completed', color: 'yellow' },
     { id: 3, type: 'Seed', name: 'Corn Hybrid', date: 'Dec 15, 2024', status: 'Good Quality', color: 'green' },
   ];
