@@ -1,29 +1,94 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Upload, Camera, Sparkles } from 'lucide-react';
+import { ArrowLeft, Upload, Camera, Sparkles, AlertTriangle } from 'lucide-react';
 import { CiCircleCheck } from "react-icons/ci";
+import { useAuth } from '../Context/AuthContext';
+import { useSaveHistory } from '../hooks/useHistory';
+import { uploadImageToStorage } from '../services/storageService';
 
 const SeedQualityAnalysis = () => {
-  const [step, setStep] = useState('upload'); // 'upload' | 'preview' | 'analyzing' | 'result'
+  const { currentUser } = useAuth();
+  const { save: saveToHistory, saving: savingHistory } = useSaveHistory(currentUser?.uid);
+  const [step, setStep] = useState('upload');
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageURL, setImageURL] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setImage(imageUrl);
+      setImageFile(file);
       setStep('preview');
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!image) return;
     setAnalyzing(true);
     setStep('analyzing');
 
+    console.log("🚀 Starting analysis...");
+    console.log("👤 Current User:", currentUser);
+    console.log("🖼️ Image file:", imageFile);
+
+    // Upload image to Firebase Storage first (skip if CORS issue)
+    let uploadedImageUrl = null;
+    if (imageFile && currentUser) {
+      try {
+        setUploading(true);
+        console.log("📤 Uploading image to storage...");
+        uploadedImageUrl = await uploadImageToStorage(imageFile, currentUser.uid, 'seedAnalysis');
+        setUploading(false);
+        setImageURL(uploadedImageUrl);
+        console.log("✅ Image processed:", uploadedImageUrl.substring(0, 50) + "...");
+      } catch (error) {
+        console.warn("⚠️ Image upload failed, using blob URL:", error.message);
+        setUploading(false);
+        // Continue with blob URL (temporary but works for current session)
+        uploadedImageUrl = image;
+      }
+    }
+
     // Simulate AI Analysis
-    setTimeout(() => {
+    setTimeout(async () => {
+      const result = {
+        qualityGrade: "Medium Quality",
+        confidence: 75,
+        colorQuality: "Seeds show a mix of colors; some display ideal golden hues while others show signs of discoloration.",
+        sizeUniformity: "There is some variation in seed size; a portion of the seeds are inconsistent in dimensions.",
+        textureQuality: "Most seeds appear smooth, but there are a few with visible cracks or damage on the surface.",
+        expectedGermination: "Approximately 75%",
+        recommendations: "Conduct a more detailed examination of the seeds to assess the extent of damage. Consider discarding any heavily discolored or cracked seeds to improve overall quality. Implement proper storage practices to maintain seed integrity and consider seed treatment options to enhance germination rates.",
+        imageUrl: uploadedImageUrl || image,
+        status: "Completed",
+        seedName: "Sample Analysis",
+      };
+
+      setAnalysisResult(result);
+
+      // Save to Firebase
+      console.log("💾 Attempting to save to Firebase...");
+      console.log("📂 Category: seedAnalysis");
+      console.log("👤 User ID:", currentUser?.uid);
+      console.log("📦 Result:", result);
+      
+      try {
+        const saved = await saveToHistory('seedAnalysis', result);
+        console.log("✅ Successfully saved to history:", saved);
+        setSaveError(null);
+      } catch (error) {
+        console.error("❌ Failed to save seed analysis:", error);
+        console.error("❌ Error message:", error.message);
+        console.error("❌ Error code:", error.code);
+        setSaveError(error.message || "Failed to save history");
+      }
+
       setAnalyzing(false);
       setStep('result');
     }, 2200);
@@ -31,6 +96,9 @@ const SeedQualityAnalysis = () => {
 
   const resetAnalysis = () => {
     setImage(null);
+    setImageFile(null);
+    setImageURL(null);
+    setAnalysisResult(null);
     setStep('upload');
   };
 
@@ -129,8 +197,22 @@ const SeedQualityAnalysis = () => {
         )}
 
         {/* Result Screen */}
-        {step === 'result' && (
+        {step === 'result' && analysisResult && (
           <div className=" bg-white border border-green-300">
+            {/* Error Alert if Save Failed */}
+            {saveError && (
+              <div className="bg-red-50 border-2 border-red-300 p-5 mx-3 mt-4 rounded-2xl">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="text-red-600 flex-shrink-0 mt-1" size={24} />
+                  <div>
+                    <p className="font-bold text-red-800 text-lg">History Save Failed</p>
+                    <p className="text-red-700 text-sm mt-1">{saveError}</p>
+                    <p className="text-red-600 text-xs mt-2">Check Firebase Database rules and CORS settings</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="bg-emerald-50 border border-emerald-100  p-6 flex items-center gap-4 mb-8">
               <div className="w-10 h-10 bg-emerald-100 flex items-center justify-center">
                 <span className="text-2xl"><CiCircleCheck /></span>
@@ -145,7 +227,7 @@ const SeedQualityAnalysis = () => {
               <div className="lg:col-span-5 flex justify-center">
                 <div className="bg-white p-8 rounded-3xl shadow-lg ">
                   <img
-                    src={image}
+                    src={analysisResult.imageUrl}
                     alt="Analyzed Seed"
                     className="max-h-80 rounded-2xl object-contain"
                   />
@@ -157,14 +239,14 @@ const SeedQualityAnalysis = () => {
                 <div>
                   <p className="text-sm text-slate-500 mb-1">Quality Grade</p>
                   <div className="bg-yellow-100 w-full text-yellow-800 text-2xl font-semibold px-6 py-3 rounded-2xl inline-block">
-                    Medium Quality
+                    {analysisResult.qualityGrade}
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="text-slate-600">Confidence</span>
-                    <span className="font-semibold">75%</span>
+                    <span className="font-semibold">{analysisResult.confidence}%</span>
                   </div>
                   <div className="h-3 bg-emerald-100 rounded-full overflow-hidden">
                     <div className="h-full w-[75%] bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full"></div>
@@ -174,19 +256,19 @@ const SeedQualityAnalysis = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl">
                     <p className="font-semibold text-slate-700 mb-2">Color Quality</p>
-                    <p className="text-sm text-slate-600">Seeds show a mix of colors; some display ideal golden hues while others show signs of discoloration.</p>
+                    <p className="text-sm text-slate-600">{analysisResult.colorQuality}</p>
                   </div>
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl">
                     <p className="font-semibold text-slate-700 mb-2">Size Uniformity</p>
-                    <p className="text-sm text-slate-600">There is some variation in seed size; a portion of the seeds are inconsistent in dimensions.</p>
+                    <p className="text-sm text-slate-600">{analysisResult.sizeUniformity}</p>
                   </div>
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl">
                     <p className="font-semibold text-slate-700 mb-2">Texture Quality</p>
-                    <p className="text-sm text-slate-600">Most seeds appear smooth, but there are a few with visible cracks or damage on the surface.</p>
+                    <p className="text-sm text-slate-600">{analysisResult.textureQuality}</p>
                   </div>
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl">
                     <p className="font-semibold text-slate-700 mb-2">Expected Germination</p>
-                    <p className="text-emerald-600 font-semibold text-xl">Approximately 75%</p>
+                    <p className="text-emerald-600 font-semibold text-xl">{analysisResult.expectedGermination}</p>
                   </div>
                 </div>
 
@@ -200,7 +282,7 @@ const SeedQualityAnalysis = () => {
                 <p className="font-semibold text-amber-800">Recommendations</p>
               </div>
               <p className="text-amber-700 text-sm leading-relaxed">
-                Conduct a more detailed examination of the seeds to assess the extent of damage. Consider discarding any heavily discolored or cracked seeds to improve overall quality. Implement proper storage practices to maintain seed integrity and consider seed treatment options to enhance germination rates.
+                {analysisResult.recommendations}
               </p>
             </div>
             <div className=" flex justify-center mb-4">

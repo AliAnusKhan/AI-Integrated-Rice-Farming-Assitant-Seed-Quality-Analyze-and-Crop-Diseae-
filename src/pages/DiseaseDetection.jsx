@@ -1,29 +1,78 @@
 import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, Camera, Sparkles, AlertTriangle, CheckCircle, ShieldCheck, Leaf } from 'lucide-react';
 import { CiCircleCheck } from "react-icons/ci";
+import { useAuth } from '../Context/AuthContext';
+import { useSaveHistory } from '../hooks/useHistory';
+import { uploadImageToStorage } from '../services/storageService';
 
 const DiseaseDetection = () => {
+  const { currentUser } = useAuth();
+  const { save: saveToHistory, saving: savingHistory } = useSaveHistory(currentUser?.uid);
   const [step, setStep] = useState('upload'); // 'upload' | 'preview' | 'analyzing' | 'result'
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageURL, setImageURL] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setImage(imageUrl);
+      setImageFile(file);
       setStep('preview');
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!image) return;
     setAnalyzing(true);
     setStep('analyzing');
 
+    // Upload image to Firebase Storage first
+    let uploadedImageUrl = null;
+    if (imageFile && currentUser) {
+      try {
+        setUploading(true);
+        uploadedImageUrl = await uploadImageToStorage(imageFile, currentUser.uid, 'diseaseDetections');
+        setUploading(false);
+        setImageURL(uploadedImageUrl);
+      } catch (error) {
+        console.error("Failed to upload image:", error);
+        setUploading(false);
+        // Continue anyway with local URL
+      }
+    }
+
     // Simulate AI Analysis
-    setTimeout(() => {
+    setTimeout(async () => {
+      const result = {
+        disease: "Healthy",
+        diseaseUrdu: "(صحت مند)",
+        severity: "Mild",
+        confidence: 100,
+        observedSymptoms: "No visible symptoms of disease.",
+        recommendedTreatment: "N/A as the leaves are healthy.",
+        preventionTips: "Continue regular agricultural practices such as crop rotation and maintaining optimal water and nutrient levels.",
+        expectedYieldImpact: "N/A, no disease detected.",
+        imageUrl: uploadedImageUrl || image,
+        status: "Detected",
+        leafName: "Sample Leaf",
+      };
+
+      setAnalysisResult(result);
+
+      // Save to Firebase
+      try {
+        await saveToHistory('diseaseDetections', result);
+      } catch (error) {
+        console.error("Failed to save disease detection:", error);
+        // Continue anyway - don't block UI
+      }
+
       setAnalyzing(false);
       setStep('result');
     }, 2200);
@@ -31,6 +80,9 @@ const DiseaseDetection = () => {
 
   const resetAnalysis = () => {
     setImage(null);
+    setImageFile(null);
+    setImageURL(null);
+    setAnalysisResult(null);
     setStep('upload');
   };
 
@@ -130,7 +182,7 @@ const DiseaseDetection = () => {
           )}
 
           {/* Result Screen - Matching Screenshot */}
-          {step === 'result' && (
+          {step === 'result' && analysisResult && (
             <div className="p-8 border-2 border-dashed border-rose-300 rounded-lg bg-white">
               {/* Detection Complete Banner */}
               <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center gap-4 mb-8">
@@ -145,7 +197,7 @@ const DiseaseDetection = () => {
                 <div className="lg:col-span-5">
                   <div className="bg-white p-6 rounded-3xl shadow-sm border border-rose-100">
                     <img
-                      src={image}
+                      src={analysisResult.imageUrl}
                       alt="Analyzed Leaf"
                       className="max-h-80 w-full rounded-2xl object-contain"
                     />
@@ -159,7 +211,7 @@ const DiseaseDetection = () => {
                     <p className="text-sm text-slate-500 mb-1.5">Disease Identified</p>
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-6 py-4 rounded-2xl text-2xl font-semibold flex items-center gap-3">
                       <CheckCircle size={28} />
-                      Healthy <span className="text-base font-normal">(صحت مند)</span>
+                      {analysisResult.disease} <span className="text-base font-normal">{analysisResult.diseaseUrdu}</span>
                     </div>
                   </div>
 
@@ -167,7 +219,7 @@ const DiseaseDetection = () => {
                   <div>
                     <p className="text-sm text-slate-500 mb-1.5">Severity Level</p>
                     <div className="bg-yellow-50 border border-yellow-200 text-yellow-800  px-6 py-3 rounded-2xl font-semibold text-xl">
-                      Mild
+                      {analysisResult.severity}
                     </div>
                   </div>
 
@@ -175,7 +227,7 @@ const DiseaseDetection = () => {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-slate-600">Detection Confidence</span>
-                      <span className="font-bold text-rose-600">100%</span>
+                      <span className="font-bold text-rose-600">{analysisResult.confidence}%</span>
                     </div>
                     <div className="h-3 bg-rose-100 rounded-full overflow-hidden">
                       <div className="h-full w-full bg-rose-600 rounded-full"></div>
@@ -190,7 +242,7 @@ const DiseaseDetection = () => {
                     <p className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
                       <AlertTriangle size={20} /> Observed Symptoms
                     </p>
-                    <p className="text-yellow-700">No visible symptoms of disease.</p>
+                    <p className="text-yellow-700">{analysisResult.observedSymptoms}</p>
                   </div>
 
                   {/* Recommended Treatment */}
@@ -198,7 +250,7 @@ const DiseaseDetection = () => {
                     <p className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
                       <ShieldCheck size={20} /> Recommended Treatment
                     </p>
-                    <p className="text-emerald-700">N/A as the leaves are healthy.</p>
+                    <p className="text-emerald-700">{analysisResult.recommendedTreatment}</p>
                   </div>
 
                   {/* Prevention Tips */}
@@ -207,14 +259,14 @@ const DiseaseDetection = () => {
                       <Leaf size={20} /> Prevention Tips
                     </p>
                     <p className="text-sky-700 text-sm">
-                      Continue regular agricultural practices such as crop rotation and maintaining optimal water and nutrient levels.
+                      {analysisResult.preventionTips}
                     </p>
                   </div>
 
                   {/* Expected Yield Impact */}
                   <div className="bg-orange-50 border border-orange-200 p-5 mt-4 rounded-2xl">
                     <p className="font-semibold text-orange-800 mb-2">Expected Yield Impact</p>
-                    <p className="text-orange-700">N/A, no disease detected.</p>
+                    <p className="text-orange-700">{analysisResult.expectedYieldImpact}</p>
                   </div></div>
               {/* Bottom Button */}
               <div className="mt-5 flex justify-center">

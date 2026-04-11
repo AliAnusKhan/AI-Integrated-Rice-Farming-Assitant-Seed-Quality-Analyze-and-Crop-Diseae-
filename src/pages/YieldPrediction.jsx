@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Sprout, Droplet, Mountain, Bug, FlaskRound } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import { useAuth } from '../Context/AuthContext';
+import { useSaveHistory } from '../hooks/useHistory';
+
 const YieldPrediction = () => {
+  const { currentUser } = useAuth();
+  const { save: saveToHistory, saving: savingHistory } = useSaveHistory(currentUser?.uid);
   const [formData, setFormData] = useState({
     seedQuality: 'Medium',
     diseaseStatus: 'None',
@@ -19,7 +24,7 @@ const YieldPrediction = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.farmingArea) {
@@ -30,7 +35,7 @@ const YieldPrediction = () => {
     setLoading(true);
 
     // Simulate AI Prediction
-    setTimeout(() => {
+    setTimeout(async () => {
       const area = parseFloat(formData.farmingArea);
       const yieldPerAcre = 3300; // kg
       const totalYield = Math.round(yieldPerAcre * area);
@@ -39,10 +44,23 @@ const YieldPrediction = () => {
         yieldPerAcre: yieldPerAcre,
         totalYield: totalYield,
         confidence: "Medium",
-        recommendations: `To improve yield, consider using higher quality seeds to unlock the potential increase of 15-20%. Ensure the irrigation system is well-maintained to provide consistent water supply. Regular monitoring for any signs of disease, even though currently none are present, will help in early detection, and the use of integrated pest management practices can safeguard crops. Additionally, applying the right balance of fertilizers based on soil tests will further boost plant growth and increase yields.`
+        farmingArea: area,
+        inputData: { ...formData },
+        recommendations: `To improve yield, consider using higher quality seeds to unlock the potential increase of 15-20%. Ensure the irrigation system is well-maintained to provide consistent water supply. Regular monitoring for any signs of disease, even though currently none are present, will help in early detection, and the use of integrated pest management practices can safeguard crops. Additionally, applying the right balance of fertilizers based on soil tests will further boost plant growth and increase yields.`,
+        status: "Completed",
+        fieldName: `Farm ${area} Acres`,
       };
 
       setPredictionResult(result);
+
+      // Save to Firebase
+      try {
+        await saveToHistory('yieldPredictions', result);
+      } catch (error) {
+        console.error("Failed to save yield prediction:", error);
+        // Continue anyway - don't block UI
+      }
+
       setLoading(false);
 
       // Console Data (as requested)
