@@ -24,20 +24,23 @@ export const uploadImageToStorage = async (file, userId, category) => {
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop();
     const fileName = `${category}/${timestamp}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-    
+
     // Create storage reference
     const storageRef = ref(storage, `users/${userId}/images/${fileName}`);
-    
+
     // Upload file
     const snapshot = await uploadBytes(storageRef, file);
-    
+
     // Get download URL
     const downloadURL = await getDownloadURL(snapshot.ref);
-    
+
     console.log("✅ Image uploaded successfully:", downloadURL);
     return downloadURL;
   } catch (error) {
     console.warn("⚠️ Storage upload failed (CORS issue), using base64 fallback");
+    console.warn("🔍 Error details:", error.message);
+    console.warn("💡 To fix CORS: Run 'gsutil cors set cors.json gs://ai-integrated-rice-assistant.firebasestorage.app'");
+    
     // Fallback: Convert to base64
     return convertToBase64(file);
   }

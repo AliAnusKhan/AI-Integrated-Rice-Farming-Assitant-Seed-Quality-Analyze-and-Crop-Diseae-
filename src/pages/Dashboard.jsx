@@ -1,23 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sprout, ScanLine, TrendingUp, ArrowRight, Award, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from '../Context/AuthContext';
+import { useHistory } from '../hooks/useHistory';
+import { getCategoryConfig } from '../services/historyService';
 
 const Dashboard = () => {
+  const { currentUser } = useAuth();
   const [stats, setStats] = useState({ seedCount: 0, diseaseCount: 0, yieldCount: 0 });
   const [activities, setActivities] = useState([]);
+  const { history, loading, error } = useHistory(currentUser?.uid);
 
-  // Load Data on Startup
+  // Calculate stats from Firebase history
   useEffect(() => {
-    // 1. Load Counts
-    const seed = parseInt(localStorage.getItem('seedCount') || '0');
-    const disease = parseInt(localStorage.getItem('diseaseCount') || '0');
-    const yieldC = parseInt(localStorage.getItem('yieldCount') || '0');
-    setStats({ seedCount: seed, diseaseCount: disease, yieldCount: yieldC });
+    if (history && history.length > 0) {
+      const seedCount = history.filter(item => item.category === 'seedAnalysis').length;
+      const diseaseCount = history.filter(item => item.category === 'diseaseDetections').length;
+      const yieldCount = history.filter(item => item.category === 'yieldPredictions').length;
+      
+      setStats({ seedCount, diseaseCount, yieldCount });
+    }
+  }, [history]);
 
-    // 2. Load Recent Activity History
-    const history = JSON.parse(localStorage.getItem('recentActivities') || '[]');
-    setActivities(history);
-  }, []);
+  // Load recent activities from history
+  useEffect(() => {
+    if (history && history.length > 0) {
+      // Convert Firebase history to activity format
+      const recentActivities = history.slice(0, 10).map(item => {
+        const categoryConfig = getCategoryConfig(item.category);
+        const date = item.createdAt ? new Date(item.createdAt) : new Date();
+        const timeStr = date.toLocaleString();
+        
+        return {
+          type: categoryConfig.label,
+          result: item.result?.status || 'Completed',
+          time: timeStr,
+          category: item.category,
+        };
+      });
+      
+      setActivities(recentActivities);
+    }
+  }, [history]);
 
   return (
     <div className="p-8 min-h-screen bg-[#f8fcf8]">
@@ -47,7 +71,7 @@ const Dashboard = () => {
 
       {/* === RECENT ACTIVITY SECTION === */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        {/* <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
             {activities.length > 0 && (
                 <button 
@@ -57,7 +81,7 @@ const Dashboard = () => {
                   Clear History
                 </button>
             )}
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {activities.length === 0 ? (

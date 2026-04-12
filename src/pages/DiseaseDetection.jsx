@@ -3,7 +3,7 @@ import { ArrowLeft, Upload, Camera, Sparkles, AlertTriangle, CheckCircle, Shield
 import { CiCircleCheck } from "react-icons/ci";
 import { useAuth } from '../Context/AuthContext';
 import { useSaveHistory } from '../hooks/useHistory';
-import { uploadImageToStorage } from '../services/storageService';
+// import { uploadImageToStorage } from '../services/storageService'; // Disabled to avoid CORS/storage issues
 
 const DiseaseDetection = () => {
   const { currentUser } = useAuth();
@@ -20,10 +20,15 @@ const DiseaseDetection = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setImage(imageUrl);
-      setImageFile(file);
-      setStep('preview');
+      // Convert to base64 immediately to avoid blob URL expiration issues
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setImage(base64String);
+        setImageFile(file);
+        setStep('preview');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -32,20 +37,9 @@ const DiseaseDetection = () => {
     setAnalyzing(true);
     setStep('analyzing');
 
-    // Upload image to Firebase Storage first
-    let uploadedImageUrl = null;
-    if (imageFile && currentUser) {
-      try {
-        setUploading(true);
-        uploadedImageUrl = await uploadImageToStorage(imageFile, currentUser.uid, 'diseaseDetections');
-        setUploading(false);
-        setImageURL(uploadedImageUrl);
-      } catch (error) {
-        console.error("Failed to upload image:", error);
-        setUploading(false);
-        // Continue anyway with local URL
-      }
-    }
+    // Disabled image upload to Firebase Storage to avoid CORS issues
+    // Only textual data will be saved to history (like Yield Prediction)
+    let uploadedImageUrl = null; // No image upload
 
     // Simulate AI Analysis
     setTimeout(async () => {
@@ -58,7 +52,7 @@ const DiseaseDetection = () => {
         recommendedTreatment: "N/A as the leaves are healthy.",
         preventionTips: "Continue regular agricultural practices such as crop rotation and maintaining optimal water and nutrient levels.",
         expectedYieldImpact: "N/A, no disease detected.",
-        imageUrl: uploadedImageUrl || image,
+        imageUrl: image, // Show local base64 image (not uploaded to Firebase)
         status: "Detected",
         leafName: "Sample Leaf",
       };
@@ -193,7 +187,7 @@ const DiseaseDetection = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left: Image */}
+                {/* Left: Image - Show local base64 image (not uploaded to Firebase) */}
                 <div className="lg:col-span-5">
                   <div className="bg-white p-6 rounded-3xl shadow-sm border border-rose-100">
                     <img

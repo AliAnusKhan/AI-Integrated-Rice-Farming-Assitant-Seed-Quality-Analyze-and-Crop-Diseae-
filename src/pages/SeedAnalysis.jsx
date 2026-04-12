@@ -3,7 +3,8 @@ import { ArrowLeft, Upload, Camera, Sparkles, AlertTriangle } from 'lucide-react
 import { CiCircleCheck } from "react-icons/ci";
 import { useAuth } from '../Context/AuthContext';
 import { useSaveHistory } from '../hooks/useHistory';
-import { uploadImageToStorage } from '../services/storageService';
+import { saveToHistory as saveToHistoryDirect } from '../services/historyService';
+// import { uploadImageToStorage } from '../services/storageService'; // Disabled to avoid CORS/storage issues
 
 const SeedQualityAnalysis = () => {
   const { currentUser } = useAuth();
@@ -16,15 +17,21 @@ const SeedQualityAnalysis = () => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [lastSavedId, setLastSavedId] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setImage(imageUrl);
-      setImageFile(file);
-      setStep('preview');
+      // Convert to base64 immediately to avoid blob URL expiration issues
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setImage(base64String);
+        setImageFile(file);
+        setStep('preview');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -37,26 +44,16 @@ const SeedQualityAnalysis = () => {
     console.log("👤 Current User:", currentUser);
     console.log("🖼️ Image file:", imageFile);
 
-    // Upload image to Firebase Storage first (skip if CORS issue)
-    let uploadedImageUrl = null;
-    if (imageFile && currentUser) {
-      try {
-        setUploading(true);
-        console.log("📤 Uploading image to storage...");
-        uploadedImageUrl = await uploadImageToStorage(imageFile, currentUser.uid, 'seedAnalysis');
-        setUploading(false);
-        setImageURL(uploadedImageUrl);
-        console.log("✅ Image processed:", uploadedImageUrl.substring(0, 50) + "...");
-      } catch (error) {
-        console.warn("⚠️ Image upload failed, using blob URL:", error.message);
-        setUploading(false);
-        // Continue with blob URL (temporary but works for current session)
-        uploadedImageUrl = image;
-      }
-    }
+    // Disabled image upload to Firebase Storage to avoid CORS issues
+    // Only textual data will be saved to history (like Yield Prediction)
+    let uploadedImageUrl = null; // No image upload
 
     // Simulate AI Analysis
     setTimeout(async () => {
+      console.log("⏰ setTimeout fired - starting analysis save test");
+      console.log("👤 currentUser at save time:", currentUser);
+      console.log("🔑 currentUser.uid at save time:", currentUser?.uid);
+      
       const result = {
         qualityGrade: "Medium Quality",
         confidence: 75,
@@ -65,28 +62,35 @@ const SeedQualityAnalysis = () => {
         textureQuality: "Most seeds appear smooth, but there are a few with visible cracks or damage on the surface.",
         expectedGermination: "Approximately 75%",
         recommendations: "Conduct a more detailed examination of the seeds to assess the extent of damage. Consider discarding any heavily discolored or cracked seeds to improve overall quality. Implement proper storage practices to maintain seed integrity and consider seed treatment options to enhance germination rates.",
-        imageUrl: uploadedImageUrl || image,
+        imageUrl: image, // Show local base64 image (not uploaded to Firebase)
         status: "Completed",
         seedName: "Sample Analysis",
       };
 
       setAnalysisResult(result);
 
-      // Save to Firebase
-      console.log("💾 Attempting to save to Firebase...");
-      console.log("📂 Category: seedAnalysis");
-      console.log("👤 User ID:", currentUser?.uid);
-      console.log("📦 Result:", result);
+      // DIRECT SAVE: Bypass hook and call service directly (like disease/yield do internally)
+      console.log("🔥 DIRECT SAVE: currentUser =", currentUser?.uid);
+      console.log("🔥 DIRECT SAVE: category = seedAnalysis");
       
-      try {
-        const saved = await saveToHistory('seedAnalysis', result);
-        console.log("✅ Successfully saved to history:", saved);
-        setSaveError(null);
-      } catch (error) {
-        console.error("❌ Failed to save seed analysis:", error);
-        console.error("❌ Error message:", error.message);
-        console.error("❌ Error code:", error.code);
-        setSaveError(error.message || "Failed to save history");
+      if (!currentUser?.uid) {
+        console.error("❌ No user ID! Cannot save.");
+        setSaveError("User not authenticated");
+      } else {
+        try {
+          console.log("📤 Calling saveToHistory service directly...");
+          const saved = await saveToHistoryDirect(currentUser.uid, 'seedAnalysis', result);
+          console.log("✅ SAVE SUCCESS! Record ID:", saved?.id);
+          console.log("✅ Full saved object:", saved);
+          setLastSavedId(saved?.id);
+          setSaveError(null);
+        } catch (error) {
+          console.error("❌ SAVE FAILED!");
+          console.error("❌ Error message:", error.message);
+          console.error("❌ Error code:", error.code);
+          console.error("❌ Full error:", error);
+          setSaveError("Save failed: " + error.message);
+        }
       }
 
       setAnalyzing(false);
@@ -219,13 +223,16 @@ const SeedQualityAnalysis = () => {
               </div>
               <div>
                 <p className="font-semibold text-emerald-800">Analysis Complete</p>
+                {lastSavedId && (
+                  <p className="text-xs text-emerald-600 mt-1">✅ Saved to history (ID: {lastSavedId.substring(0, 8)}...)</p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-3">
-              {/* Atom Logo / Image Section */}
+              {/* Image Section - Show local base64 image (not uploaded to Firebase) */}
               <div className="lg:col-span-5 flex justify-center">
-                <div className="bg-white p-8 rounded-3xl shadow-lg ">
+                <div className="bg-white p-8 rounded-3xl shadow-lg">
                   <img
                     src={analysisResult.imageUrl}
                     alt="Analyzed Seed"

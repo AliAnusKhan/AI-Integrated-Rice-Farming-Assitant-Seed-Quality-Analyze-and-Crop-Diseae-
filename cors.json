@@ -1,8 +1,8 @@
 [
   {
-    "origin": ["http://localhost:5173", "https://rice-farming-huzaifa.vercel.app", "*"],
+    "origin": ["http://localhost:5173", "https://rice-farming-huzaifa.vercel.app"],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-firebase-storage-version", "x-goog-upload-url", "x-goog-upload-protocol"]
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-firebase-storage-version", "x-goog-upload-url", "x-goog-upload-protocol", "x-goog-storage-class", "x-goog-hash"]
   }
 ]

@@ -12,8 +12,8 @@ import Signup from './pages/Signup'
 import SeedScanner from './pages/SeedScanner'
 import DiseaseDetection from './pages/DiseaseDetection'
 import History from './pages/History'
-import SeedInfo from './pages/SeedInfo'
-import DiseaseInfo from './pages/DiseaseInfo'
+// import SeedInfo from './pages/SeedInfo'
+// import DiseaseInfo from './pages/DiseaseInfo'
 
 import Layout from './Layout'
 
@@ -35,8 +35,8 @@ const App = () => {
         <Route path="/seed-scan" element={<ProtectedRoute><Layout><SeedScanner /></Layout></ProtectedRoute>} />
         <Route path="/disease-detection" element={<ProtectedRoute><Layout><DiseaseDetection /></Layout></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><Layout><History /></Layout></ProtectedRoute>} />
-        <Route path="/seed-info" element={<ProtectedRoute><Layout><SeedInfo /></Layout></ProtectedRoute>} />
-        <Route path="/disease-info" element={<ProtectedRoute><Layout><DiseaseInfo /></Layout></ProtectedRoute>} />
+        {/* <Route path="/seed-info" element={<ProtectedRoute><Layout><SeedInfo /></Layout></ProtectedRoute>} /> */}
+        {/* <Route path="/disease-info" element={<ProtectedRoute><Layout><DiseaseInfo /></Layout></ProtectedRoute>} /> */}
       </Routes>
     </Router>
   )
