@@ -87,7 +87,7 @@ const History = () => {
 
                     <div className="flex justify-between items-end">
                       <div>
-                        <p className="text-emerald-600 font-medium">{result.name || 'Huzaifa'}</p>
+                        <p className="text-emerald-600 font-medium">{result.seedName || ""}</p>
                         <p className="text-sm text-slate-500 mt-1">{item.timestamp ? formatTimestamp(item.timestamp) : 'Apr 3, 2026'}</p>
                       </div>
                       <div className="text-right">
