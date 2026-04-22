@@ -4,6 +4,7 @@ import { Sprout, ScanLine, TrendingUp, ArrowRight, Award, Clock, AlertCircle, Ch
 import { useAuth } from '../Context/AuthContext';
 import { useHistory } from '../hooks/useHistory';
 import { getCategoryConfig } from '../services/historyService';
+import Header from './TempratureAPI';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -52,7 +53,7 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-slate-800">Welcome back</h1>
             <p className="text-green-600 font-medium mt-1">Your intelligent farming companion</p>
         </div>
-        <Award className="text-yellow-400" size={32} />
+        <Header/>
       </div>
 
       {/* Action Cards */}
