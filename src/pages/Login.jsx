@@ -1,7 +1,7 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase'; // Firebase connect kiya
+import { auth } from '../firebase'; 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Leaf, Loader2, Lock, Mail } from 'lucide-react';
 
@@ -15,9 +15,8 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Firebase Login Function
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/'); // Kamyab hone par Dashboard par bhejo
+      navigate('/'); 
     } catch (error) {
       alert("Login Failed: " + error.message);
     }
@@ -53,7 +52,12 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-slate-700">Password</label>
+              <Link to="/forgot-password" className="text-sm font-bold text-green-600 hover:underline">
+                Forgot Password?
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-slate-400" size={20} />
               <input 

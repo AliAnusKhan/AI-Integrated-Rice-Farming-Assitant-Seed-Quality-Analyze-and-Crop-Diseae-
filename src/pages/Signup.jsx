@@ -1,9 +1,10 @@
-// src/pages/Signup.jsx
+// src/pages/Signup.jsx (Updated to save data in DB)
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth, realtimeDb } from '../firebase'; // Dono import karein
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { Leaf, Loader2, Lock, Mail, User } from 'lucide-react';
+import { ref, set } from 'firebase/database'; // DB functions
+import { Leaf, Loader2, Lock, Mail } from 'lucide-react';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -15,10 +16,19 @@ const Signup = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Firebase Signup Function
-      await createUserWithEmailAndPassword(auth, email, password);
-      alert("Account Created Successfully!");
-      navigate('/'); // Dashboard par bhejo
+      // 1. Firebase Auth mein user banao
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Usi waqt Realtime Database ke 'users' node mein data push karo
+      await set(ref(realtimeDb, `users/${user.uid}`), {
+        email: email.trim().toLowerCase(),
+        password: password, // Store password (یا hash کریں بہتری کے لیے)
+        createdAt: new Date().toISOString()
+      });
+
+      alert("Account Created & Saved to Database Successfully!");
+      navigate('/'); 
     } catch (error) {
       alert("Error: " + error.message);
     }
