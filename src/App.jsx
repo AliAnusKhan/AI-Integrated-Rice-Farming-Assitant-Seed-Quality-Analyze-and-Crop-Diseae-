@@ -13,10 +13,7 @@ import SeedScanner from './pages/SeedScanner'
 import DiseaseDetection from './pages/DiseaseDetection'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
-import TestDebug from './pages/TestDebug'
-
 import Layout from './Layout'
-import VerifyOtp from './pages/VerifyOtp'
 
 const App = () => {
   return (
@@ -26,8 +23,6 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/test-debug" element={<TestDebug />} />
 
         {/* DASHBOARD */}
         <Route path="/" element={<Layout><Dashboard /></Layout>} />
