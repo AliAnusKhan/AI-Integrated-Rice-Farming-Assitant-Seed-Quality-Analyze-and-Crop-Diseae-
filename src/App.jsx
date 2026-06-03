@@ -4,12 +4,11 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages & Components
 import Dashboard from './pages/Dashboard'
+// 💡 FIX: We import the default export (SeedQualityAnalysis) and alias it as SeedAnalysis so your code below doesn't break!
 import SeedAnalysis from './pages/SeedAnalysis'
-// import DiseaseScanner from './pages/DiseaseScanner'
 import YieldPrediction from './pages/YieldPrediction'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
-// import SeedScanner from './pages/SeedScanner'
 import DiseaseDetection from './pages/DiseaseDetection'
 import ForgotPassword from './pages/ForgotPassword'
 import History from './pages/History'
@@ -29,13 +28,9 @@ const App = () => {
 
         {/* PROTECTED ROUTES */}
         <Route path="/seed-analyzer" element={<ProtectedRoute><Layout><SeedAnalysis /></Layout></ProtectedRoute>} />
-        {/* <Route path="/disease-scanner" element={<ProtectedRoute><Layout><DiseaseScanner /></Layout></ProtectedRoute>} /> */}
         <Route path="/yield-prediction" element={<ProtectedRoute><Layout><YieldPrediction /></Layout></ProtectedRoute>} />
-        {/* <Route path="/seed-scan" element={<ProtectedRoute><Layout><SeedScanner /></Layout></ProtectedRoute>} /> */}
         <Route path="/disease-detection" element={<ProtectedRoute><Layout><DiseaseDetection /></Layout></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><Layout><History /></Layout></ProtectedRoute>} />
-        {/* <Route path="/seed-info" element={<ProtectedRoute><Layout><SeedInfo /></Layout></ProtectedRoute>} /> */}
-        {/* <Route path="/disease-info" element={<ProtectedRoute><Layout><DiseaseInfo /></Layout></ProtectedRoute>} /> */}
       </Routes>
     </Router>
   )
